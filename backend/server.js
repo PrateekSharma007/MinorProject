@@ -20,6 +20,8 @@ wss.on('connection', (ws) => {
     ws.on('message', (message) => {
         // message is an ArrayBuffer or Blob containing the audio data chunk
         console.log('Received audio chunk of size:', message.byteLength);
+
+        console.log(message);
         
         // Example: Save or process the audio chunk
         // For instance, you could pipe it to an STT model or save it temporarily
