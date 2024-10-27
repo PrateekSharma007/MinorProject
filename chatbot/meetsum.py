@@ -43,6 +43,7 @@ from nltk.stem import WordNetLemmatizer
 
 load_dotenv()
 api_key = os.getenv('PINECONE_API_KEY')
+openai_api_key = os.getenv("OPENAI_API_KEY")
 # Pinecone_api_key= '952c8164-6ad6-44c2-b9c1-236a20a63eb7'
 pc = Pinecone(api_key=api_key )
 
@@ -405,15 +406,9 @@ def chat_gpt(question):
             return {"error": "No question provided"}
         
 
-        # compression_retriever = reRanker()
-        # # print("compression_retriever", compression_retriever)
-
-        # compressed_docs = compression_retriever.invoke(question)
-        # print("compressed_docs", compressed_docs)
-
         rag = RetrievalQA.from_chain_type(
             llm=ChatOpenAI(
-                api_key="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",
+                api_key=openai_api_key,
                 temperature=0,
                 model="gpt-4o",
             ),
@@ -423,7 +418,7 @@ def chat_gpt(question):
             ),
             memory=ConversationSummaryMemory(
                 llm=ChatOpenAI(
-                    api_key="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",
+                    api_key=openai_api_key,
                     temperature=0,
                     model="gpt-4o",
                 )
