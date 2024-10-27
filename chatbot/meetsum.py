@@ -38,20 +38,21 @@ from langchain_community.document_loaders import UnstructuredMarkdownLoader
 import nltk 
 from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
-
+from nltk.stem import PorterStemmer 
 
 
 load_dotenv()
-api_key = os.getenv('PINECONE_API_KEY')
-openai_api_key = os.getenv("OPENAI_API_KEY")
-# Pinecone_api_key= '952c8164-6ad6-44c2-b9c1-236a20a63eb7'
-pc = Pinecone(api_key=api_key )
+# api_key = "952c8164-6ad6-44c2-b9c1-236a20a63eb7"
+openai_api_key = "ssk-proj-1cMQ0pDQ0hUsCzTrLP2r6rjE-A2lpNlWwxTBxluZ0r0ujfCxTXx3Hs8j2-RFGB5fJggzmgn4WpT3BlbkFJU1VXe03RPf-F1mxmN0CQblIO-EYtAEcGSwJC0KX11cI0GBVzA3Ah1j8IGUSuqNBWM600tx6cwA"
+# api_key= os.getenv("PINECONE_API_KEY")
+pc = Pinecone(api_key= os.environ.get("PINECONE_API_KEY"))
 
 
 api_key = "gbJWBLPOrzwjFAM4pTamxSmSnRmCoC3W3VTSVdpM"
 embeddings = CohereEmbeddings(cohere_api_key=api_key , model="embed-english-v3.0")
 template = """<s>[INST] Given the context - {context} </s>[INST] [INST] Answer the following question - {question}[/INST]
 
+If someone greets you with hello or hi , reply in greeting form and nicely .
 If the context is unclear, kindly provide more information or rephrase the question. If the topic is outside my expertise, I'll let you know.
 
 """
@@ -98,7 +99,7 @@ def create_pkl_string(filename):
 
 
 lemmatizer = WordNetLemmatizer()
-from nltk.stem import PorterStemmer 
+
 porter = PorterStemmer()
 import string
 def transform_text(text) : 
@@ -408,7 +409,7 @@ def chat_gpt(question):
 
         rag = RetrievalQA.from_chain_type(
             llm=ChatOpenAI(
-                api_key=openai_api_key,
+                api_key=openai_api_key[1:],
                 temperature=0,
                 model="gpt-4o",
             ),
@@ -418,7 +419,7 @@ def chat_gpt(question):
             ),
             memory=ConversationSummaryMemory(
                 llm=ChatOpenAI(
-                    api_key=openai_api_key,
+                    api_key=openai_api_key[1:],
                     temperature=0,
                     model="gpt-4o",
                 )
@@ -514,10 +515,10 @@ with st.sidebar :
     if 'converted_file' not in st.session_state:
         st.session_state.converted_file = None
 
-    st.image('MeetSum', caption='')
+    st.title("MeetSum-chatbot")
     
     # st.title("Upload your docs")
-    chat_option = st.sidebar.radio("Select Assistant:", ("llama3" ,"Mistral", "GPT"),horizontal=True)
+    chat_option = st.sidebar.radio("Select Assistant:", ("llama3" ,"Mistral", "GPT"))
     
     if 'prev_chat_option' not in st.session_state:
         st.session_state.prev_chat_option = None 
@@ -527,39 +528,39 @@ with st.sidebar :
         st.session_state.responses = []  # Clear the responses list
         st.session_state.prev_chat_option = chat_option
     # st.sidebar.write("Uploaded Files:")
-    st.session_state.files = st.sidebar.file_uploader("Upload your files", accept_multiple_files=True, key="file_uploader")
+    # st.session_state.files = st.sidebar.file_uploader("Upload your files", accept_multiple_files=True, key="file_uploader")
 
     # Display uploaded files as clickable buttons
-    file_names = [file.name for file in st.session_state.files]
-    for file_name in file_names:
-        if st.button(file_name, key=f"button_{file_name}"):
-            # st.session_state.prompts = []
-            with st.spinner(f"Uploading {file_name}..."):
+    # file_names = [file.name for file in st.session_state.files]
+    # for file_name in file_names:
+    #     if st.button(file_name, key=f"button_{file_name}"):
+    #         # st.session_state.prompts = []
+    #         with st.spinner(f"Uploading {file_name}..."):
                 
-                response = upload()
+    #             response = upload()
                 
-                if response.get("error"):
-                    st.write(f"Error uploading {file_name}: {response['error']}")
-                else:
-                    st.write(f"{file_name} uploaded successfully")
-                    st.session_state.prompts = []  # Clear the prompts list
-                    st.session_state.responses = []  # Clear the responses list
-    src_folder = "./src"
-    if os.path.isdir(src_folder):
-        src_file_names = [f for f in os.listdir(src_folder) if os.path.isfile(os.path.join(src_folder, f))]
-        if src_file_names:
-            if st.session_state.converted_file:
-                st.write(f"FILE IN USE: {st.session_state.converted_file}")
-            st.write("Click File to ask questions:")
-            file_container = st.container()
-            for src_file_name in src_file_names:
-                if st.button(src_file_name, key=f"src_button_{src_file_name}"):
-                    with st.spinner(f"Converting {src_file_name} to vectors..."):
-                        convert_to_vector(src_file_name)
-                        file_container.write(f"CONVERTED FILE : {src_file_name}")
-                        st.session_state.converted_file = src_file_name
-                        st.session_state.prompts = []  # Clear the prompts list
-                        st.session_state.responses = []  # Clear the responses list
+    #             if response.get("error"):
+    #                 st.write(f"Error uploading {file_name}: {response['error']}")
+    #             else:
+    #                 st.write(f"{file_name} uploaded successfully")
+    #                 st.session_state.prompts = []  # Clear the prompts list
+    #                 st.session_state.responses = []  # Clear the responses list
+    # src_folder = "./src"
+    # if os.path.isdir(src_folder):
+    #     src_file_names = [f for f in os.listdir(src_folder) if os.path.isfile(os.path.join(src_folder, f))]
+    #     if src_file_names:
+    #         if st.session_state.converted_file:
+    #             st.write(f"FILE IN USE: {st.session_state.converted_file}")
+    #         st.write("Click File to ask questions:")
+    #         file_container = st.container()
+    #         for src_file_name in src_file_names:
+    #             if st.button(src_file_name, key=f"src_button_{src_file_name}"):
+    #                 with st.spinner(f"Converting {src_file_name} to vectors..."):
+    #                     convert_to_vector(src_file_name)
+    #                     file_container.write(f"CONVERTED FILE : {src_file_name}")
+    #                     st.session_state.converted_file = src_file_name
+    #                     st.session_state.prompts = []  # Clear the prompts list
+    #                     st.session_state.responses = []  # Clear the responses list
                         
 
 
