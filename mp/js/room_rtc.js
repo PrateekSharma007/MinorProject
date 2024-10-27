@@ -280,3 +280,47 @@ document.getElementById('leave-btn').addEventListener('click', leaveStream)
 
 
 joinRoomInit()
+
+
+
+// now we want to send all the audio/video tracks to be summarised , for that we are using websockets for sending the data to our server in chunks in real time.
+// the models work on that data and we receive the summarizations to be displayed on the frontend in real time
+
+// room_rtc.js
+const ws = new WebSocket('ws://localhost:8080'); // Connect to the WebSocket server
+
+ws.addEventListener('open', () => {
+    console.log('WebSocket connection established');
+});
+
+ws.addEventListener('error', (error) => {
+    console.error('WebSocket error:', error);
+});
+
+ws.addEventListener('close', () => {
+    console.log('WebSocket connection closed');
+});
+
+// Function to send audio data chunks to the WebSocket server
+function sendAudioChunk(audioChunk) {
+    if (ws.readyState === WebSocket.OPEN) {
+        ws.send(audioChunk);
+    }
+}
+
+// Capture audio and send it to the WebSocket server
+async function captureAndSendAudio() {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    const mediaRecorder = new MediaRecorder(stream);
+
+    // Triggered when there’s an audio data chunk available
+    mediaRecorder.ondataavailable = (event) => {
+        const audioChunk = event.data;
+        sendAudioChunk(audioChunk);
+    };
+
+    mediaRecorder.start(500); // Capture audio in 500ms chunks
+}
+
+// Start capturing and sending audio
+captureAndSendAudio();
