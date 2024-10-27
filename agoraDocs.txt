@@ -1,0 +1,14 @@
+createClient(config: ClientConfig): IAgoraRTCClient
+Creates a local client object for managing a call.
+
+This is usually the first step of using the Agora Web SDK.
+
+Parameters
+config: ClientConfig
+The configurations for the client object, including channel profile and codec. The default codec is vp8 and default channel profile is rtc. See ClientConfig for details.
+
+Returns IAgoraRTCClient
+
+either provide client config or directly provide the object containing the config info , {mode , codec} etc
+role and clientRoleOptions are also other fields inside the client config but they are optional 
+
