@@ -1,45 +1,41 @@
-from dotenv import load_dotenv
-import streamlit as st
-from flask import Flask, request, jsonify
-from PyPDF2 import PdfReader
+import json
+import os
 import time
-from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_community.document_loaders.csv_loader import CSVLoader
-from langchain_community.document_loaders import PyPDFLoader
-from langchain_community.document_loaders import TextLoader
-from langchain_community.document_loaders import JSONLoader
-from langchain.prompts import PromptTemplate
-from langchain.text_splitter import CharacterTextSplitter
-from langchain_community.embeddings import OpenAIEmbeddings
+
+import joblib
+import nest_asyncio
+# from langchain_community.output_parsers.rail_parser import GuardrailsOutputParser
+import nltk
+import requests
+import streamlit as st
+import streamlit.components.v1 as components
+from dotenv import load_dotenv
+from flask import Flask, jsonify, request
+from langchain.chains import RetrievalQA
 # from langchain.vectorstores import FAISS
 from langchain.chains.question_answering import load_qa_chain
-from langchain_community.llms import OpenAI
+from langchain.memory import ConversationSummaryMemory
+from langchain.prompts import PromptTemplate
+from langchain.retrievers import ContextualCompressionRetriever
+from langchain.text_splitter import (CharacterTextSplitter,
+                                     RecursiveCharacterTextSplitter)
+from langchain_cohere import CohereEmbeddings, CohereRerank
 from langchain_community.callbacks.manager import get_openai_callback
-from streamlit.components.v1 import html
-import streamlit.components.v1 as components
-from streamlit_chat import message
+from langchain_community.document_loaders import (JSONLoader, PyPDFLoader,
+                                                  TextLoader,
+                                                  UnstructuredMarkdownLoader)
+from langchain_community.document_loaders.csv_loader import CSVLoader
+from langchain_community.embeddings import OpenAIEmbeddings
+from langchain_community.llms import Ollama, OpenAI
 from langchain_openai import ChatOpenAI
 from langchain_pinecone import PineconeVectorStore
-from langchain_cohere import CohereEmbeddings
-from pinecone import Pinecone,ServerlessSpec
-import os 
-from langchain.memory import ConversationSummaryMemory
-import requests
-from langchain_community.llms import Ollama
-from langchain.chains import RetrievalQA
-import json 
-import nest_asyncio 
 from llama_parse import LlamaParse
-import joblib
-from langchain.retrievers import ContextualCompressionRetriever
-from langchain_cohere import CohereRerank
-from langchain_community.document_loaders import UnstructuredMarkdownLoader
-# from langchain_community.output_parsers.rail_parser import GuardrailsOutputParser
-import nltk 
 from nltk.corpus import stopwords
-from nltk.stem import WordNetLemmatizer
-from nltk.stem import PorterStemmer 
-
+from nltk.stem import PorterStemmer, WordNetLemmatizer
+from pinecone import Pinecone, ServerlessSpec
+from PyPDF2 import PdfReader
+from streamlit.components.v1 import html
+from streamlit_chat import message
 
 load_dotenv()
 # api_key = "952c8164-6ad6-44c2-b9c1-236a20a63eb7"
@@ -102,6 +98,8 @@ lemmatizer = WordNetLemmatizer()
 
 porter = PorterStemmer()
 import string
+
+
 def transform_text(text) : 
     text = text.lower()
     text = nltk.word_tokenize(text)  #the text has come in the list  

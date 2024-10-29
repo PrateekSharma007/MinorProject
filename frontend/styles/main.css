@@ -144,6 +144,21 @@ a {
   background-color: #845695;
 }
 
+#startRecordingButton {
+  display: block;
+  /* background-color: #845695; */
+  background-color: #3C3D37;
+  color: white!important;
+  padding: 8px 24px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 5px;
+}
+
+#startRecordingButton:hover {
+  background-color: #845695;
+}
+
 .nav--list {
   display: flex;
   gap: 1rem;
@@ -191,6 +206,23 @@ a {
   }
 
   #create__room__btn:hover {
+    background-color: transparent;
+  }
+
+
+  .nav__link,
+  #startRecordingButton {
+    font-size: 0;
+    border: none;
+  }
+
+  #startRecordingButton {
+    padding: 0;
+    background-color: transparent;
+    border-radius: 50%;
+  }
+
+  #startRecordingButton:hover {
     background-color: transparent;
   }
 }

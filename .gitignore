@@ -8,6 +8,9 @@ logs/
 *.log
 .log.
 
+backend/audio_chunks/
+
+
 # OS-specific files
 .DS_Store  # macOS
 Thumbs.db  # Windows
