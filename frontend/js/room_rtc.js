@@ -292,6 +292,19 @@ joinRoomInit()
 // Establish a persistent WebSocket connection
 
 
+function stopRecording() {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();  // Stop the recording process
+
+        // Send a stop signal to the server to close the write stream
+        if (ws.readyState === WebSocket.OPEN) {
+            ws.send('stop');
+        }
+    }
+    console.log('Recording stopped');
+}
+
+
 let ws; // Declare ws at the top for accessibility
 
 function connectWebSocket() {
