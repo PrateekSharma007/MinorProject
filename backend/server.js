@@ -1,4 +1,3 @@
-// backend/server.js
 const WebSocket = require('ws');
 const fs = require('fs');
 const path = require('path');
@@ -8,27 +7,40 @@ const wss = new WebSocket.Server({ port: PORT }, () => {
     console.log(`WebSocket server is running on ws://localhost:${PORT}`);
 });
 
-let chunkCounter = 0; // Counter to keep track of each chunk
-
-// Handle incoming WebSocket connections
-// backend/server.js
+const audioDir = path.join(__dirname, 'audio_chunks');
+if (!fs.existsSync(audioDir)) {
+    fs.mkdirSync(audioDir);
+}
 
 wss.on('connection', (ws) => {
     console.log('Client connected');
 
-    // Listen for incoming audio chunks
-    ws.on('message', (message) => {
-        // message is an ArrayBuffer or Blob containing the audio data chunk
-        console.log('Received audio chunk of size:', message.byteLength);
+    // Path for a unique file per session, based on timestamp
+    const outputPath = path.join(audioDir, `audio_${Date.now()}.webm`);
+    const writeStream = fs.createWriteStream(outputPath);
 
-        console.log(message);
-        
-        // Example: Save or process the audio chunk
-        // For instance, you could pipe it to an STT model or save it temporarily
+    ws.on('message', (message) => {
+        if (typeof message === 'string' && message === 'stop') {
+            // When 'stop' is received, end the write stream
+            console.log('Stopping recording and closing file');
+            writeStream.end();
+        } else {
+            // Append the audio chunk to the file
+            writeStream.write(Buffer.from(message), (err) => {
+                if (err) {
+                    console.error('Error saving audio chunk:', err);
+                } else {
+                    console.log(`Appended audio chunk to ${outputPath}`);
+                }
+            });
+        }
     });
 
     ws.on('close', () => {
         console.log('Client disconnected');
     });
-});
 
+    ws.on('error', (error) => {
+        console.error('WebSocket error:', error);
+    });
+});

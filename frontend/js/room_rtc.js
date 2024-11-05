@@ -287,40 +287,116 @@ joinRoomInit()
 // the models work on that data and we receive the summarizations to be displayed on the frontend in real time
 
 // room_rtc.js
-const ws = new WebSocket('ws://localhost:8080'); // Connect to the WebSocket server
 
-ws.addEventListener('open', () => {
-    console.log('WebSocket connection established');
-});
 
-ws.addEventListener('error', (error) => {
-    console.error('WebSocket error:', error);
-});
+// Establish a persistent WebSocket connection
 
-ws.addEventListener('close', () => {
-    console.log('WebSocket connection closed');
-});
+
+function stopRecording() {
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+        mediaRecorder.stop();  // Stop the recording process
+
+        // Send a stop signal to the server to close the write stream
+        if (ws.readyState === WebSocket.OPEN) {
+            ws.send('stop');
+        }
+    }
+    console.log('Recording stopped');
+}
+
+
+let ws; // Declare ws at the top for accessibility
+
+function connectWebSocket() {
+    ws = new WebSocket('ws://localhost:8080');
+
+    ws.addEventListener('open', () => {
+        console.log('WebSocket connection established');
+    });
+
+    ws.addEventListener('error', (error) => {
+        console.error('WebSocket error:', error);
+    });
+
+    ws.addEventListener('close', () => {
+        console.log('WebSocket connection closed. Attempting to reconnect...');
+        setTimeout(connectWebSocket, 1000); // Attempt to reconnect
+    });
+}
+
+connectWebSocket(); // Initial connection setup
+
+let isRecording = false; // Flag to keep track of recording status
+let mediaRecorder; // Declare mediaRecorder outside for control
+let stream; // Keep track of audio stream
 
 // Function to send audio data chunks to the WebSocket server
 function sendAudioChunk(audioChunk) {
     if (ws.readyState === WebSocket.OPEN) {
         ws.send(audioChunk);
+        console.log('Sent audio chunk');
+    } else {
+        console.log('WebSocket is not open. Unable to send audio chunk.');
+        stopRecording(); // Stop recording if the WebSocket is closed
     }
 }
 
-// Capture audio and send it to the WebSocket server
+// Function to capture and send audio data
 async function captureAndSendAudio() {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-    const mediaRecorder = new MediaRecorder(stream);
+    if (!stream) {
+        try {
+            stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        } catch (error) {
+            console.error('Error accessing audio devices:', error);
+            return;
+        }
+    }
 
-    // Triggered when there’s an audio data chunk available
-    mediaRecorder.ondataavailable = (event) => {
-        const audioChunk = event.data;
-        sendAudioChunk(audioChunk);
-    };
+    if (!mediaRecorder || mediaRecorder.state === 'inactive') {
+        mediaRecorder = new MediaRecorder(stream);
 
-    mediaRecorder.start(500); // Capture audio in 500ms chunks
+        mediaRecorder.ondataavailable = (event) => {
+            const audioChunk = event.data;
+            sendAudioChunk(audioChunk);
+        };
+
+        mediaRecorder.onstop = () => {
+            console.log('MediaRecorder stopped');
+            if (stream) {
+                stream.getTracks().forEach(track => track.stop());
+                stream = null;
+            }
+        };
+
+        mediaRecorder.onerror = (event) => {
+            console.error('MediaRecorder error:', event.error);
+            stopRecording(); // Stop recording on error
+        };
+    }
+
+    mediaRecorder.start(10000); // Capture audio in 1-second chunks
+    console.log('Started audio recording');
 }
 
-// Start capturing and sending audio
-captureAndSendAudio();
+// Event listener for start/stop recording button
+document.getElementById("startRecordingButton").addEventListener("click", async (event) => {
+    event.preventDefault(); // Prevent default anchor behavior
+    const button = document.getElementById("startRecordingButton");
+
+    if (isRecording) {
+        mediaRecorder.stop();
+        button.querySelector('span').textContent = "Record"; // Change button text
+        console.log("Recording stopped");
+    } else {
+        if (ws.readyState === WebSocket.OPEN) {
+            await captureAndSendAudio();
+            button.querySelector('span').textContent = "Stop Recording"; // Change button text
+            console.log("Recording started");
+        } else {
+            console.log("WebSocket not connected, cannot start recording.");
+        }
+    }
+
+    isRecording = !isRecording; // Toggle recording status
+});
+
