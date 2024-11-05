@@ -527,41 +527,7 @@ with st.sidebar :
         st.session_state.prompts = []  # Clear the prompts list
         st.session_state.responses = []  # Clear the responses list
         st.session_state.prev_chat_option = chat_option
-    # st.sidebar.write("Uploaded Files:")
-    # st.session_state.files = st.sidebar.file_uploader("Upload your files", accept_multiple_files=True, key="file_uploader")
 
-    # Display uploaded files as clickable buttons
-    # file_names = [file.name for file in st.session_state.files]
-    # for file_name in file_names:
-    #     if st.button(file_name, key=f"button_{file_name}"):
-    #         # st.session_state.prompts = []
-    #         with st.spinner(f"Uploading {file_name}..."):
-                
-    #             response = upload()
-                
-    #             if response.get("error"):
-    #                 st.write(f"Error uploading {file_name}: {response['error']}")
-    #             else:
-    #                 st.write(f"{file_name} uploaded successfully")
-    #                 st.session_state.prompts = []  # Clear the prompts list
-    #                 st.session_state.responses = []  # Clear the responses list
-    # src_folder = "./src"
-    # if os.path.isdir(src_folder):
-    #     src_file_names = [f for f in os.listdir(src_folder) if os.path.isfile(os.path.join(src_folder, f))]
-    #     if src_file_names:
-    #         if st.session_state.converted_file:
-    #             st.write(f"FILE IN USE: {st.session_state.converted_file}")
-    #         st.write("Click File to ask questions:")
-    #         file_container = st.container()
-    #         for src_file_name in src_file_names:
-    #             if st.button(src_file_name, key=f"src_button_{src_file_name}"):
-    #                 with st.spinner(f"Converting {src_file_name} to vectors..."):
-    #                     convert_to_vector(src_file_name)
-    #                     file_container.write(f"CONVERTED FILE : {src_file_name}")
-    #                     st.session_state.converted_file = src_file_name
-    #                     st.session_state.prompts = []  # Clear the prompts list
-    #                     st.session_state.responses = []  # Clear the responses list
-                        
 
 
 if "messages" not in st.session_state:
