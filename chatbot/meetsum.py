@@ -1,45 +1,49 @@
-import json
-import os
-import time
-
-import joblib
-import nest_asyncio
-# from langchain_community.output_parsers.rail_parser import GuardrailsOutputParser
-import nltk
-import requests
-import streamlit as st
-import streamlit.components.v1 as components
 from dotenv import load_dotenv
-from flask import Flask, jsonify, request
-from langchain.chains import RetrievalQA
+import streamlit as st
+from flask import Flask, request, jsonify
+from PyPDF2 import PdfReader
+import time
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain_community.document_loaders.csv_loader import CSVLoader
+from langchain_community.document_loaders import PyPDFLoader
+from langchain_community.document_loaders import TextLoader
+from langchain_community.document_loaders import JSONLoader
+from langchain.prompts import PromptTemplate
+from langchain.text_splitter import CharacterTextSplitter
+from langchain_community.embeddings import OpenAIEmbeddings
 # from langchain.vectorstores import FAISS
 from langchain.chains.question_answering import load_qa_chain
-from langchain.memory import ConversationSummaryMemory
-from langchain.prompts import PromptTemplate
-from langchain.retrievers import ContextualCompressionRetriever
-from langchain.text_splitter import (CharacterTextSplitter,
-                                     RecursiveCharacterTextSplitter)
-from langchain_cohere import CohereEmbeddings, CohereRerank
+from langchain_community.llms import OpenAI
 from langchain_community.callbacks.manager import get_openai_callback
-from langchain_community.document_loaders import (JSONLoader, PyPDFLoader,
-                                                  TextLoader,
-                                                  UnstructuredMarkdownLoader)
-from langchain_community.document_loaders.csv_loader import CSVLoader
-from langchain_community.embeddings import OpenAIEmbeddings
-from langchain_community.llms import Ollama, OpenAI
+from streamlit.components.v1 import html
+import streamlit.components.v1 as components
+from streamlit_chat import message
 from langchain_openai import ChatOpenAI
 from langchain_pinecone import PineconeVectorStore
+from langchain_cohere import CohereEmbeddings
+from pinecone import Pinecone,ServerlessSpec
+import os 
+from langchain.memory import ConversationSummaryMemory
+import requests
+from langchain_community.llms import Ollama
+from langchain.chains import RetrievalQA
+import json 
+import nest_asyncio 
 from llama_parse import LlamaParse
+import joblib
+from langchain.retrievers import ContextualCompressionRetriever
+from langchain_cohere import CohereRerank
+from langchain_community.document_loaders import UnstructuredMarkdownLoader
+# from langchain_community.output_parsers.rail_parser import GuardrailsOutputParser
+import nltk 
 from nltk.corpus import stopwords
-from nltk.stem import PorterStemmer, WordNetLemmatizer
-from pinecone import Pinecone, ServerlessSpec
-from PyPDF2 import PdfReader
-from streamlit.components.v1 import html
-from streamlit_chat import message
+from nltk.stem import WordNetLemmatizer
+from nltk.stem import PorterStemmer 
+
 
 load_dotenv()
 # api_key = "952c8164-6ad6-44c2-b9c1-236a20a63eb7"
-openai_api_key = "ssk-proj-1cMQ0pDQ0hUsCzTrLP2r6rjE-A2lpNlWwxTBxluZ0r0ujfCxTXx3Hs8j2-RFGB5fJggzmgn4WpT3BlbkFJU1VXe03RPf-F1mxmN0CQblIO-EYtAEcGSwJC0KX11cI0GBVzA3Ah1j8IGUSuqNBWM600tx6cwA"
+openai_api_key = os.getenv("OPENAI_API_KEY")
 # api_key= os.getenv("PINECONE_API_KEY")
 pc = Pinecone(api_key= os.environ.get("PINECONE_API_KEY"))
 
@@ -98,8 +102,6 @@ lemmatizer = WordNetLemmatizer()
 
 porter = PorterStemmer()
 import string
-
-
 def transform_text(text) : 
     text = text.lower()
     text = nltk.word_tokenize(text)  #the text has come in the list  
@@ -407,7 +409,7 @@ def chat_gpt(question):
 
         rag = RetrievalQA.from_chain_type(
             llm=ChatOpenAI(
-                api_key=openai_api_key[1:],
+                api_key=openai_api_key,
                 temperature=0,
                 model="gpt-4o",
             ),
@@ -417,7 +419,7 @@ def chat_gpt(question):
             ),
             memory=ConversationSummaryMemory(
                 llm=ChatOpenAI(
-                    api_key=openai_api_key[1:],
+                    api_key=openai_api_key,
                     temperature=0,
                     model="gpt-4o",
                 )
@@ -525,7 +527,41 @@ with st.sidebar :
         st.session_state.prompts = []  # Clear the prompts list
         st.session_state.responses = []  # Clear the responses list
         st.session_state.prev_chat_option = chat_option
+    # st.sidebar.write("Uploaded Files:")
+    # st.session_state.files = st.sidebar.file_uploader("Upload your files", accept_multiple_files=True, key="file_uploader")
 
+    # Display uploaded files as clickable buttons
+    # file_names = [file.name for file in st.session_state.files]
+    # for file_name in file_names:
+    #     if st.button(file_name, key=f"button_{file_name}"):
+    #         # st.session_state.prompts = []
+    #         with st.spinner(f"Uploading {file_name}..."):
+                
+    #             response = upload()
+                
+    #             if response.get("error"):
+    #                 st.write(f"Error uploading {file_name}: {response['error']}")
+    #             else:
+    #                 st.write(f"{file_name} uploaded successfully")
+    #                 st.session_state.prompts = []  # Clear the prompts list
+    #                 st.session_state.responses = []  # Clear the responses list
+    # src_folder = "./src"
+    # if os.path.isdir(src_folder):
+    #     src_file_names = [f for f in os.listdir(src_folder) if os.path.isfile(os.path.join(src_folder, f))]
+    #     if src_file_names:
+    #         if st.session_state.converted_file:
+    #             st.write(f"FILE IN USE: {st.session_state.converted_file}")
+    #         st.write("Click File to ask questions:")
+    #         file_container = st.container()
+    #         for src_file_name in src_file_names:
+    #             if st.button(src_file_name, key=f"src_button_{src_file_name}"):
+    #                 with st.spinner(f"Converting {src_file_name} to vectors..."):
+    #                     convert_to_vector(src_file_name)
+    #                     file_container.write(f"CONVERTED FILE : {src_file_name}")
+    #                     st.session_state.converted_file = src_file_name
+    #                     st.session_state.prompts = []  # Clear the prompts list
+    #                     st.session_state.responses = []  # Clear the responses list
+                        
 
 
 if "messages" not in st.session_state:
@@ -572,7 +608,6 @@ if prompt and not st.session_state.processing:
                     st.write("No response")
     finally:
         st.session_state.processing = False
-
 
 
 
